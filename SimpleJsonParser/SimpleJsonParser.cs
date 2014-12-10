@@ -34,19 +34,19 @@ namespace SimpleJsonParser
 
         public JsonType Type { get; private set; }
 
-        public long Int { get { return (long)GetValueWith(JsonType.Int, JsonType.Double); } }
+        public long Int { get { return GetValue<long>(JsonType.Int, JsonType.Double); } }
 
-        public double Double { get { return (double)GetValueWith(JsonType.Double, JsonType.Int); } }
+        public double Double { get { return GetValue<double>(JsonType.Double, JsonType.Int); } }
 
-        public string String { get { return GetValueWith(JsonType.String); } }
+        public string String { get { return GetValueAs<string>(JsonType.String); } }
 
-        public bool Bool { get { return GetValueWith(JsonType.Bool); } }
+        public bool Bool { get { return GetValue<bool>(JsonType.Bool); } }
 
         public JsonElement this[string key]
         {
             get
             {
-                try { return GetValueWith(JsonType.Object)[key]; }
+                try { return GetValueAs<IDictionary<string, JsonElement>>(JsonType.Object)[key]; }
                 catch (KeyNotFoundException ex)
                 { throw new KeyNotFoundException(string.Format("要素名 \"{0}\" が [{1}] に存在しません", key, this.Name), ex); }
             }
@@ -54,28 +54,36 @@ namespace SimpleJsonParser
 
         public JsonElement this[int index]
         {
-            get { return GetValueWith(JsonType.Array)[index]; }
+            get { return GetValueAs<IList<JsonElement>>(JsonType.Array)[index]; }
         }
 
         public bool Exists(string name)
         {
-            return GetValueWith(JsonType.Object).ContainsKey(name);
+            return GetValueAs<IDictionary<string, JsonElement>>(JsonType.Object).ContainsKey(name);
         }
 
         public int Count()
         {
-            return GetValueWith(JsonType.Array, JsonType.Object).Count;
+            return GetValueAs<System.Collections.ICollection>(JsonType.Array, JsonType.Object).Count;
         }
 
-        public bool TypeIs(params JsonType[] type)
+        public bool TypeIs(params JsonType[] types)
         {
-            return type.Contains(this.Type);
+            return types.Any(x => x == this.Type);
         }
 
-        private dynamic GetValueWith(params JsonType[] types)
+        private T GetValue<T>(params JsonType[] types) where T : struct
         {
             if (TypeIs(types))
-                return this.Value;
+                return (T)this.Value;
+            throw new InvalidOperationException(string.Format("要素 \"{0}\" は {1} 型ではありません",
+                this.Name, string.Join(" 型、", types.Select(x => "<" + x.ToString() + ">"))));
+        }
+
+        private T GetValueAs<T>(params JsonType[] types) where T : class
+        {
+            if (TypeIs(types))
+                return this.Value as T;
             throw new InvalidOperationException(string.Format("要素 \"{0}\" は {1} 型ではありません",
                 this.Name, string.Join(" 型、", types.Select(x => "<" + x.ToString() + ">"))));
         }
@@ -95,7 +103,7 @@ namespace SimpleJsonParser
             return element.Attribute("item") != null ? element.Attribute("item").Value : element.Name.LocalName;
         }
 
-        private void Set(dynamic value, string name, JsonType type)
+        private void Set<T>(T value, string name, JsonType type)
         {
             this.Value = value;
             this.Name = name;
@@ -130,7 +138,7 @@ namespace SimpleJsonParser
                     catch (Exception ex) { throw new ArgumentException("booleanのパースに失敗しました", ex); }
                     break;
                 case "null":
-                    Set(null, GetElementName(element), JsonType.Null);
+                    Set<object>(null, GetElementName(element), JsonType.Null);
                     break;
                 default:
                     throw new ArgumentException("JsonTypeの判別に失敗しました");
@@ -141,12 +149,12 @@ namespace SimpleJsonParser
         {
             switch (this.Type)
             {
-                case JsonType.Int:
-                case JsonType.Double: return this.Value.ToString();
-                case JsonType.String: return "\"" + ReplaceEscapeChars(this.Value) + "\"";
+                case JsonType.Int: return ((long)this.Value).ToString();
+                case JsonType.Double: return ((double)this.Value).ToString();
+                case JsonType.String: return "\"" + ReplaceEscapeChars(this.Value as string) + "\"";
                 case JsonType.Array: return "[" + string.Join(",", this.Select(x => x.ToString())) + "]";
                 case JsonType.Object: return "{" + string.Join(",", this.Select(x => "\"" + ReplaceEscapeChars(x.Name) + "\":" + x.ToString())) + "}";
-                case JsonType.Bool: return this.Value.ToString().ToLower();
+                case JsonType.Bool: return ((bool)this.Value).ToString().ToLower();
                 case JsonType.Null: return "null";
                 default: return null;
             }
@@ -162,12 +170,12 @@ namespace SimpleJsonParser
         {
             if (this.Type == JsonType.Object)
             {
-                foreach (KeyValuePair<string, JsonElement> element in this.Value)
+                foreach (var element in this.Value as IDictionary<string, JsonElement>)
                     yield return element.Value;
             }
             else if (this.Type == JsonType.Array)
             {
-                foreach (JsonElement element in this.Value)
+                foreach (var element in this.Value as IList<JsonElement>)
                     yield return element;
             }
         }
