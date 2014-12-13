@@ -28,7 +28,7 @@ namespace SimpleJsonParser
 
     public class JsonElement : IEnumerable<JsonElement>
     {
-        private dynamic Value; //long, double, string, List<JsonElement>, Dictionary<string, JsonElement>, bool, null
+        private object Value; //long, double, string, List<JsonElement>, Dictionary<string, JsonElement>, bool, null
 
         public string Name { get; private set; }
 
