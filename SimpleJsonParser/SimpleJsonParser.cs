@@ -25,7 +25,9 @@ namespace SimpleJsonParser
         }
     }
 
-    public enum JsonType : byte { Int, Double, String, Array, Object, Bool, Null }
+    [Flags]
+    public enum JsonType : byte
+    { Int = 1, Double = 1 << 1, String = 1 << 2, Array = 1 << 3, Object = 1 << 4, Bool = 1 << 5, Null = 1 << 6, Undefined = 0 }
 
     [DebuggerDisplay("{ToString(),nq}", Name = "{Name}", Type = "JsonElement.{Type}")]
     public class JsonElement : IEnumerable<JsonElement>
@@ -39,10 +41,10 @@ namespace SimpleJsonParser
         public JsonType Type { get; private set; }
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        public long Int { get { return GetValue<long>(JsonType.Int, JsonType.Double); } }
+        public long Int { get { return GetValue<long>(JsonType.Int | JsonType.Double); } }
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        public double Double { get { return GetValue<double>(JsonType.Double, JsonType.Int); } }
+        public double Double { get { return GetValue<double>(JsonType.Double | JsonType.Int); } }
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         public string String { get { return GetValueAs<string>(JsonType.String); } }
@@ -72,28 +74,28 @@ namespace SimpleJsonParser
 
         public int Count()
         {
-            return GetValueAs<System.Collections.ICollection>(JsonType.Array, JsonType.Object).Count;
+            return GetValueAs<System.Collections.ICollection>(JsonType.Array | JsonType.Object).Count;
         }
 
-        public bool TypeIs(params JsonType[] types)
+        public bool TypeIs(JsonType flag)
         {
-            return types.Any(x => x == this.Type);
+            return 0 != (this.Type & flag);
         }
 
-        private T GetValue<T>(params JsonType[] types) where T : struct
+        private T GetValue<T>(JsonType type) where T : struct
         {
-            if (TypeIs(types))
+            if (TypeIs(type))
                 return (T)this.Value;
             throw new InvalidOperationException(string.Format("要素 \"{0}\" は {1} 型ではありません",
-                this.Name, string.Join(" 型、", types.Select(x => "<" + x.ToString() + ">"))));
+                this.Name, string.Join(" 型、 ", type.ToString().Split(',').Select(x => "<" + x.TrimStart() + ">"))));
         }
 
-        private T GetValueAs<T>(params JsonType[] types) where T : class
+        private T GetValueAs<T>(JsonType type) where T : class
         {
-            if (TypeIs(types))
+            if (TypeIs(type))
                 return this.Value as T;
             throw new InvalidOperationException(string.Format("要素 \"{0}\" は {1} 型ではありません",
-                this.Name, string.Join(" 型、", types.Select(x => "<" + x.ToString() + ">"))));
+                this.Name, string.Join(" 型、 ", type.ToString().Split(',').Select(x => "<" + x.TrimStart() + ">"))));
         }
 
         private static IDictionary<string, JsonElement> JsonObject(IEnumerable<XElement> elements)
