@@ -103,7 +103,7 @@ namespace SimpleJsonParser
 
         private static IList<JsonElement> JsonArray(IEnumerable<XElement> elements)
         {
-            return elements.Select(x => new JsonElement(x)).ToList();
+            return elements.Select((x, i) => new JsonElement(x, i)).ToList();
         }
 
         private static string GetElementName(XElement element)
@@ -151,6 +151,12 @@ namespace SimpleJsonParser
                 default:
                     throw new ArgumentException("JsonTypeの判別に失敗しました");
             }
+        }
+
+        internal JsonElement(XElement element, int index)
+            : this(element)
+        {
+            this.Name += "[" + index.ToString() + "]";
         }
 
         public override string ToString()
