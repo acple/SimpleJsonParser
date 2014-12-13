@@ -27,7 +27,7 @@ namespace SimpleJsonParser
 
     public enum JsonType : byte { Int, Double, String, Array, Object, Bool, Null }
 
-    [DebuggerDisplay("{ToString(),nq}", Name = "{Name}")]
+    [DebuggerDisplay("{ToString(),nq}", Name = "{Name}", Type = "JsonElement.{Type}")]
     public class JsonElement : IEnumerable<JsonElement>
     {
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
