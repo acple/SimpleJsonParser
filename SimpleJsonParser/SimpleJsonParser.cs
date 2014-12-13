@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.Serialization.Json;
 using System.Text;
@@ -26,20 +27,27 @@ namespace SimpleJsonParser
 
     public enum JsonType : byte { Int, Double, String, Array, Object, Bool, Null }
 
+    [DebuggerDisplay("{ToString(),nq}", Name = "{Name}")]
     public class JsonElement : IEnumerable<JsonElement>
     {
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private object Value; //long, double, string, List<JsonElement>, Dictionary<string, JsonElement>, bool, null
 
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         public string Name { get; private set; }
 
         public JsonType Type { get; private set; }
 
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         public long Int { get { return GetValue<long>(JsonType.Int, JsonType.Double); } }
 
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         public double Double { get { return GetValue<double>(JsonType.Double, JsonType.Int); } }
 
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         public string String { get { return GetValueAs<string>(JsonType.String); } }
 
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         public bool Bool { get { return GetValue<bool>(JsonType.Bool); } }
 
         public JsonElement this[string key]
