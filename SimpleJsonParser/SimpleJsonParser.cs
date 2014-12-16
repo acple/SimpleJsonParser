@@ -20,7 +20,7 @@ namespace SimpleJsonParser
         {
             using (var reader = JsonReaderWriterFactory.CreateJsonReader(encoding.GetBytes(json), XmlDictionaryReaderQuotas.Max))
             {
-                return new JsonElement(XElement.Load(reader));
+                return JsonElement.CreateJsonElement(XElement.Load(reader));
             }
         }
     }
@@ -30,33 +30,26 @@ namespace SimpleJsonParser
     { Int = 1, Double = 1 << 1, String = 1 << 2, Array = 1 << 3, Object = 1 << 4, Bool = 1 << 5, Null = 1 << 6, Undefined = 0 }
 
     [DebuggerDisplay("{ToString(),nq}", Name = "{Name}", Type = "JsonElement.{Type}")]
-    public class JsonElement : IEnumerable<JsonElement>
+    [DebuggerTypeProxy(typeof(JsonElementDebugView))]
+    public abstract class JsonElement : IEnumerable<JsonElement>
     {
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private object Value; //long, double, string, List<JsonElement>, Dictionary<string, JsonElement>, bool, null
+        public readonly string Name;
 
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        public string Name { get; private set; }
+        public readonly JsonType Type;
 
-        public JsonType Type { get; private set; }
-
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         public long Int { get { return GetValue<long>(JsonType.Int | JsonType.Double); } }
 
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         public double Double { get { return GetValue<double>(JsonType.Double | JsonType.Int); } }
 
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        public string String { get { return GetValueAs<string>(JsonType.String); } }
+        public string String { get { return GetValue<string>(JsonType.String); } }
 
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         public bool Bool { get { return GetValue<bool>(JsonType.Bool); } }
 
         public JsonElement this[string key]
         {
             get
             {
-                try { return GetValueAs<IDictionary<string, JsonElement>>(JsonType.Object)[key]; }
+                try { return GetValue<IDictionary<string, JsonElement>>(JsonType.Object)[key]; }
                 catch (KeyNotFoundException ex)
                 { throw new KeyNotFoundException(string.Format("要素名 \"{0}\" が [{1}] に存在しません", key, this.Name), ex); }
             }
@@ -64,17 +57,12 @@ namespace SimpleJsonParser
 
         public JsonElement this[int index]
         {
-            get { return GetValueAs<IList<JsonElement>>(JsonType.Array)[index]; }
+            get { return GetValue<IList<JsonElement>>(JsonType.Array)[index]; }
         }
 
-        public bool Exists(string name)
+        public bool Exists(string key)
         {
-            return GetValueAs<IDictionary<string, JsonElement>>(JsonType.Object).ContainsKey(name);
-        }
-
-        public int Count()
-        {
-            return GetValueAs<System.Collections.ICollection>(JsonType.Array | JsonType.Object).Count;
+            return GetValue<IDictionary<string, JsonElement>>(JsonType.Object).ContainsKey(key);
         }
 
         public bool TypeIs(JsonType flag)
@@ -82,30 +70,12 @@ namespace SimpleJsonParser
             return 0 != (this.Type & flag);
         }
 
-        private T GetValue<T>(JsonType type) where T : struct
+        private T GetValue<T>(JsonType type)
         {
-            if (TypeIs(type))
-                return (T)this.Value;
-            throw new InvalidOperationException(string.Format("要素 \"{0}\" は {1} 型ではありません",
-                this.Name, string.Join(" 型、 ", type.ToString().Split(',').Select(x => "<" + x.TrimStart() + ">"))));
-        }
-
-        private T GetValueAs<T>(JsonType type) where T : class
-        {
-            if (TypeIs(type))
-                return this.Value as T;
-            throw new InvalidOperationException(string.Format("要素 \"{0}\" は {1} 型ではありません",
-                this.Name, string.Join(" 型、 ", type.ToString().Split(',').Select(x => "<" + x.TrimStart() + ">"))));
-        }
-
-        private static IDictionary<string, JsonElement> JsonObject(IEnumerable<XElement> elements)
-        {
-            return elements.ToDictionary(x => GetElementName(x), x => new JsonElement(x));
-        }
-
-        private static IList<JsonElement> JsonArray(IEnumerable<XElement> elements)
-        {
-            return elements.Select((x, i) => new JsonElement(x, i)).ToList();
+            if (!TypeIs(type))
+                throw new InvalidOperationException(string.Format("要素 \"{0}\" は {1} 型ではありません",
+                    this.Name, string.Join(" 型、 ", type.ToString().Split(',').Select(x => "<" + x.TrimStart() + ">"))));
+            return (this as JsonElement<T>).Value;
         }
 
         private static string GetElementName(XElement element)
@@ -113,14 +83,23 @@ namespace SimpleJsonParser
             return element.Attribute("item") != null ? element.Attribute("item").Value : element.Name.LocalName;
         }
 
-        private void Set<T>(T value, string name, JsonType type)
+        private static IDictionary<string, JsonElement> JsonObject(IEnumerable<XElement> elements)
         {
-            this.Value = value;
-            this.Name = name;
-            this.Type = type;
+            var name = string.Empty;
+            return elements.ToDictionary(x => name = GetElementName(x), x => CreateJsonElement(x, name));
         }
 
-        internal JsonElement(XElement element)
+        private static IList<JsonElement> JsonArray(IEnumerable<XElement> elements)
+        {
+            return elements.Select((x, i) => CreateJsonElement(x, "item[" + i.ToString() + "]")).ToList();
+        }
+
+        internal static JsonElement CreateJsonElement(XElement element)
+        {
+            return CreateJsonElement(element, GetElementName(element));
+        }
+
+        internal static JsonElement CreateJsonElement(XElement element, string name)
         {
             switch (element.Attribute("type").Value)
             {
@@ -128,77 +107,89 @@ namespace SimpleJsonParser
                     long l;
                     double d;
                     if (long.TryParse(element.Value, out l))
-                        Set(l, GetElementName(element), JsonType.Int);
+                        return new JsonElement<long>(l, name, JsonType.Int);
                     else if (double.TryParse(element.Value, out d))
-                        Set(d, GetElementName(element), JsonType.Double);
+                        return new JsonElement<double>(d, name, JsonType.Double);
                     else
                         throw new ArgumentException("numberのパースに失敗しました");
-                    break;
                 case "string":
-                    Set(element.Value, GetElementName(element), JsonType.String);
-                    break;
+                    return new JsonElement<string>(element.Value, name, JsonType.String);
                 case "array":
-                    Set(JsonArray(element.Elements()), GetElementName(element), JsonType.Array);
-                    break;
+                    return new JsonElement<IList<JsonElement>>(JsonArray(element.Elements()), name, JsonType.Array);
                 case "object":
-                    Set(JsonObject(element.Elements()), GetElementName(element), JsonType.Object);
-                    break;
+                    return new JsonElement<IDictionary<string, JsonElement>>(JsonObject(element.Elements()), name, JsonType.Object);
                 case "boolean":
-                    try { Set(bool.Parse(element.Value), GetElementName(element), JsonType.Bool); }
+                    try { return new JsonElement<bool>(bool.Parse(element.Value), name, JsonType.Bool); }
                     catch (Exception ex) { throw new ArgumentException("booleanのパースに失敗しました", ex); }
-                    break;
                 case "null":
-                    Set<object>(null, GetElementName(element), JsonType.Null);
-                    break;
+                    return new JsonElement<object>(null, name, JsonType.Null);
                 default:
                     throw new ArgumentException("JsonTypeの判別に失敗しました");
             }
         }
 
-        internal JsonElement(XElement element, int index)
-            : this(element)
+        internal JsonElement(string name, JsonType type)
         {
-            this.Name += "[" + index.ToString() + "]";
-        }
-
-        public override string ToString()
-        {
-            switch (this.Type)
-            {
-                case JsonType.Int: return ((long)this.Value).ToString();
-                case JsonType.Double: return ((double)this.Value).ToString();
-                case JsonType.String: return "\"" + ReplaceEscapeChars(this.Value as string) + "\"";
-                case JsonType.Array: return "[" + string.Join(",", this.Select(x => x.ToString())) + "]";
-                case JsonType.Object: return "{" + string.Join(",", this.Select(x => "\"" + ReplaceEscapeChars(x.Name) + "\":" + x.ToString())) + "}";
-                case JsonType.Bool: return ((bool)this.Value).ToString().ToLower();
-                case JsonType.Null: return "null";
-                default: return null;
-            }
-        }
-
-        private static string ReplaceEscapeChars(string str)
-        {
-            return str.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\n", "\\n").Replace("\r", "\\r")
-                .Replace("\t", "\\t").Replace("\f", "\\f").Replace("\b", "\\b").Replace("/", "\\/");
+            this.Type = type;
+            this.Name = name;
         }
 
         public IEnumerator<JsonElement> GetEnumerator()
         {
-            if (this.Type == JsonType.Object)
+            switch (this.Type)
             {
-                foreach (var element in this.Value as IDictionary<string, JsonElement>)
-                    yield return element.Value;
-            }
-            else if (this.Type == JsonType.Array)
-            {
-                foreach (var element in this.Value as IList<JsonElement>)
-                    yield return element;
+                case JsonType.Array: return GetValue<IList<JsonElement>>(JsonType.Array).GetEnumerator();
+                case JsonType.Object: return GetValue<IDictionary<string, JsonElement>>(JsonType.Object).Values.GetEnumerator();
+                default: return null;
             }
         }
 
         System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
         {
             return this.GetEnumerator();
+        }
+
+        private class JsonElementDebugView
+        {
+            [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
+            public readonly JsonElement[] ChildNodes;
+
+            private JsonElementDebugView(JsonElement element)
+            {
+                this.ChildNodes = element.TypeIs(JsonType.Array | JsonType.Object) ? element.ToArray() : null;
+            }
+        }
+    }
+
+    internal class JsonElement<T> : JsonElement
+    {
+        public readonly T Value;
+
+        public JsonElement(T value, string name, JsonType type)
+            : base(name, type)
+        {
+            this.Value = value;
+        }
+
+        public override string ToString()
+        {
+            switch (this.Type)
+            {
+                case JsonType.Int: return this.Value.ToString();
+                case JsonType.Double: return this.Value.ToString();
+                case JsonType.String: return CreateEscapedString(this.Value as string);
+                case JsonType.Array: return "[" + string.Join(",", this.Select(x => x.ToString())) + "]";
+                case JsonType.Object: return "{" + string.Join(",", this.Select(x => CreateEscapedString(x.Name) + ":" + x.ToString())) + "}";
+                case JsonType.Bool: return this.Value.ToString().ToLower();
+                case JsonType.Null: return "null";
+                default: return null;
+            }
+        }
+
+        private static string CreateEscapedString(string str)
+        {
+            return "\"" + str.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\n", "\\n").Replace("\r", "\\r")
+                .Replace("\t", "\\t").Replace("\f", "\\f").Replace("\b", "\\b").Replace("/", "\\/") + "\"";
         }
     }
 }
