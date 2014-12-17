@@ -72,10 +72,10 @@ namespace SimpleJsonParser
 
         private T GetValue<T>(JsonType type)
         {
-            if (!TypeIs(type))
-                throw new InvalidOperationException(string.Format("要素 \"{0}\" は {1} 型ではありません",
-                    this.Name, string.Join(" 型、 ", type.ToString().Split(',').Select(x => "<" + x.TrimStart() + ">"))));
-            return (this as JsonElement<T>).Value;
+            if (TypeIs(type))
+                return (this as JsonElement<T>).Value;
+            throw new InvalidOperationException(string.Format("要素 \"{0}\" は {1} 型ではありません",
+                this.Name, string.Join(" 型、 ", type.ToString().Split(',').Select(x => "<" + x.TrimStart() + ">"))));
         }
 
         private static string GetElementName(XElement element)
