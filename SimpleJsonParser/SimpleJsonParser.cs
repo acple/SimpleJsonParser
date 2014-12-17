@@ -26,7 +26,7 @@ namespace SimpleJsonParser
     }
 
     [Flags]
-    public enum JsonType : byte
+    public enum JsonType
     { Int = 1, Double = 1 << 1, String = 1 << 2, Array = 1 << 3, Object = 1 << 4, Bool = 1 << 5, Null = 1 << 6, Undefined = 0 }
 
     [DebuggerDisplay("{ToString(),nq}", Name = "{Name}", Type = "JsonElement.{Type}")]
