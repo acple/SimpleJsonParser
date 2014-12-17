@@ -65,9 +65,9 @@ namespace SimpleJsonParser
             return GetValue<IDictionary<string, JsonElement>>(JsonType.Object).ContainsKey(key);
         }
 
-        public bool TypeIs(JsonType flag)
+        public bool TypeIs(JsonType type)
         {
-            return 0 != (this.Type & flag);
+            return 0 != (this.Type & type);
         }
 
         private T GetValue<T>(JsonType type)
