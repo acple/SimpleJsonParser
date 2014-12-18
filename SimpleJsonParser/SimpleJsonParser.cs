@@ -85,7 +85,7 @@ namespace SimpleJsonParser
 
         private static IDictionary<string, JsonElement> JsonObject(IEnumerable<XElement> elements)
         {
-            var name = string.Empty;
+            string name = null;
             return elements.ToDictionary(x => name = GetElementName(x), x => CreateJsonElement(x, name));
         }
 
