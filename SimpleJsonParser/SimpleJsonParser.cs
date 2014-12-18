@@ -175,7 +175,7 @@ namespace SimpleJsonParser
         {
             switch (this.Type)
             {
-                case JsonType.Int: return this.Value.ToString();
+                case JsonType.Int:
                 case JsonType.Double: return this.Value.ToString();
                 case JsonType.String: return CreateEscapedString(this.Value as string);
                 case JsonType.Array: return "[" + string.Join(",", this.Select(x => x.ToString())) + "]";
