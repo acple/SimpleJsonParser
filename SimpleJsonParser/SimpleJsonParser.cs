@@ -91,7 +91,7 @@ namespace SimpleJsonParser
 
         private static IList<JsonElement> JsonArray(IEnumerable<XElement> elements)
         {
-            return elements.Select((x, i) => CreateJsonElement(x, "[" + i.ToString() + "]")).ToList();
+            return elements.Select((x, i) => CreateJsonElement(x, i.ToString())).ToList();
         }
 
         internal static JsonElement CreateJsonElement(XElement element)
