@@ -37,9 +37,9 @@ namespace SimpleJsonParser
 
         public readonly JsonType Type;
 
-        public long Int { get { return GetValue<long>(JsonType.Int | JsonType.Double); } }
+        public long Int { get { return GetValue<long>(JsonType.Int); } }
 
-        public double Double { get { return GetValue<double>(JsonType.Double | JsonType.Int); } }
+        public double Double { get { return GetValue<double>(JsonType.Double); } }
 
         public string String { get { return GetValue<string>(JsonType.String); } }
 
@@ -74,8 +74,7 @@ namespace SimpleJsonParser
         {
             if (TypeIs(type))
                 return (this as JsonElement<T>).Value;
-            throw new InvalidOperationException(string.Format("要素 \"{0}\" は {1} 型ではありません",
-                this.Name, string.Join(" 型、 ", type.ToString().Split(',').Select(x => "<" + x.TrimStart() + ">"))));
+            throw new InvalidOperationException(string.Format("要素 \"{0}\" は <{1}> 型ではありません", this.Name, type.ToString()));
         }
 
         private static string GetElementName(XElement element)
