@@ -20,7 +20,7 @@ namespace SimpleJsonParser
         public string Name { get; private set; }
         public JsonType Type { get; private set; }
 
-        public int Int { get { checked { return (int)ParseToLong(GetValue<string>(JsonType.Number), false); } } }
+        public int Int { get { return checked((int)ParseToLong(GetValue<string>(JsonType.Number), false)); } }
         public long Long { get { return ParseToLong(GetValue<string>(JsonType.Number), false); } }
         public double Double { get { return ParseToDouble(GetValue<string>(JsonType.Number)); } }
         public string String { get { return GetValue<string>(JsonType.String); } }
