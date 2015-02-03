@@ -162,7 +162,7 @@ namespace SimpleJsonParser
             {
                 case JsonType.Array: return GetValue<IList<JsonElement>>(JsonType.Array).GetEnumerator();
                 case JsonType.Object: return GetValue<IDictionary<string, JsonElement>>(JsonType.Object).Values.GetEnumerator();
-                default: return null;
+                default: return Enumerable.Empty<JsonElement>().GetEnumerator();
             }
         }
 
