@@ -33,9 +33,9 @@ namespace SimpleJsonParser
         {
             get
             {
-                try { return GetValue<IDictionary<string, JsonElement>>(JsonType.Object)[key]; }
-                catch (KeyNotFoundException ex)
-                { throw new KeyNotFoundException(string.Format("要素名 \"{0}\" が [{1}] に存在しません", key, this.Name), ex); }
+                JsonElement element;
+                if (GetValue<IDictionary<string, JsonElement>>(JsonType.Object).TryGetValue(key, out element)) return element;
+                else throw new KeyNotFoundException(string.Format("要素名 \"{0}\" が [{1}] に存在しません", key, this.Name));
             }
         }
 
