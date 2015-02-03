@@ -78,7 +78,7 @@ namespace SimpleJsonParser
 
         private static string GetElementName(XElement element)
         {
-            return element.Attribute("item") != null ? element.Attribute("item").Value : element.Name.LocalName;
+            return (element.Attribute("item") != null) ? element.Attribute("item").Value : element.Name.LocalName;
         }
 
         private static IDictionary<string, JsonElement> JsonObject(IEnumerable<XElement> elements)
@@ -191,7 +191,7 @@ namespace SimpleJsonParser
 
             private JsonElementDebugView(JsonElement element)
             {
-                this.ChildNodes = element.TypeIs(JsonType.Array | JsonType.Object) ? element.ToArray() : null;
+                this.ChildNodes = (element.TypeIs(JsonType.Array | JsonType.Object)) ? element.ToArray() : null;
             }
         }
     }
