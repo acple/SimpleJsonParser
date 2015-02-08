@@ -56,9 +56,8 @@ namespace SimpleJsonParser
 
         private T GetValue<T>(JsonType type)
         {
-            if (TypeIs(type))
-                return (this as Element<T>).Value;
-            throw new InvalidOperationException(string.Format("要素 \"{0}\" は <{1}> 型ではありません", this.Name, type.ToString()));
+            if (TypeIs(type)) return (this as Element<T>).Value;
+            else throw new InvalidOperationException(string.Format("要素 \"{0}\" は <{1}> 型ではありません", this.Name, type.ToString()));
         }
 
         private static long ParseToLong(string value, bool force)
@@ -179,9 +178,7 @@ namespace SimpleJsonParser
         public static JsonElement Parse(string json, Encoding encoding)
         {
             using (var reader = JsonReaderWriterFactory.CreateJsonReader(encoding.GetBytes(json), XmlDictionaryReaderQuotas.Max))
-            {
                 return JsonElement.CreateJsonElement(XElement.Load(reader));
-            }
         }
 
         private class JsonElementDebugView
