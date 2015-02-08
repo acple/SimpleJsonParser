@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Runtime.Serialization.Json;
 using System.Text;
@@ -63,16 +64,16 @@ namespace SimpleJsonParser
         private static long ParseToLong(string value, bool force)
         {
             long l;
-            if (long.TryParse(value, out l)) return l;
+            if (long.TryParse(value, NumberStyles.Integer, NumberFormatInfo.InvariantInfo, out l)) return l;
             else if (force) return (long)ParseToDouble(value);
-            else throw new ArgumentException(typeof(long).ToString() + " 型へのパースに失敗しました");
+            else throw new ArgumentException(string.Format("{0} 型へのパースに失敗しました value=[{1}]", typeof(long).ToString(), value));
         }
 
         private static double ParseToDouble(string value)
         {
             double d;
-            if (double.TryParse(value, out d)) return d;
-            else throw new ArgumentException("numberのパースに失敗しました");
+            if (double.TryParse(value, NumberStyles.Float, NumberFormatInfo.InvariantInfo, out d)) return d;
+            else throw new ArgumentException(string.Format("numberのパースに失敗しました value=[{0}]", value));
         }
 
         private static string GetElementName(XElement element)
