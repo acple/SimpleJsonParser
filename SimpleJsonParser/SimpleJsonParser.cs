@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Runtime.Serialization.Json;
 using System.Text;
@@ -144,6 +145,13 @@ namespace SimpleJsonParser
         public static JsonElement Parse(string json, Encoding encoding)
         {
             using (var reader = JsonReaderWriterFactory.CreateJsonReader(encoding.GetBytes(json), XmlDictionaryReaderQuotas.Max))
+                return CreateJsonElement(XElement.Load(reader));
+        }
+
+        public static JsonElement Parse(Stream stream) => Parse(stream, Encoding.UTF8);
+        public static JsonElement Parse(Stream stream, Encoding encoding)
+        {
+            using (var reader = JsonReaderWriterFactory.CreateJsonReader(stream, encoding, XmlDictionaryReaderQuotas.Max, null))
                 return CreateJsonElement(XElement.Load(reader));
         }
 
