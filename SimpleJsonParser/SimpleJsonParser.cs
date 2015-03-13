@@ -37,7 +37,7 @@ namespace SimpleJsonParser
             {
                 JsonElement element;
                 if (GetValue<IDictionary<string, JsonElement>>(JsonType.Object).TryGetValue(key, out element)) return element;
-                else throw new KeyNotFoundException($"要素名 \"{key}\" が [{this.Name}] に存在しません");
+                else throw new KeyNotFoundException($"要素名 \"{ key }\" が [{ this.Name }] に存在しません");
             }
         }
 
@@ -50,7 +50,7 @@ namespace SimpleJsonParser
         private T GetValue<T>(JsonType type)
         {
             if (TypeIs(type)) return (this as Element<T>).Value;
-            else throw new InvalidOperationException($"要素 \"{this.Name}\" は <{type.ToString()}> 型ではありません");
+            else throw new InvalidOperationException($"要素 \"{ this.Name }\" は <{ type }> 型ではありません");
         }
 
         private static long ParseToLong(string value, bool force)
@@ -58,14 +58,14 @@ namespace SimpleJsonParser
             long l;
             if (long.TryParse(value, NumberStyles.Integer, NumberFormatInfo.InvariantInfo, out l)) return l;
             else if (force) return (long)ParseToDouble(value);
-            else throw new ArgumentException($"{typeof(long)} 型へのパースに失敗しました value=[{value}]");
+            else throw new ArgumentException($"{ typeof(long) } 型へのパースに失敗しました value=[{ value }]");
         }
 
         private static double ParseToDouble(string value)
         {
             double d;
             if (double.TryParse(value, NumberStyles.Float, NumberFormatInfo.InvariantInfo, out d)) return d;
-            else throw new ArgumentException($"numberのパースに失敗しました value=[{value}]");
+            else throw new ArgumentException($"numberのパースに失敗しました value=[{ value }]");
         }
 
         private static string GetElementName(XElement element) => element.Attribute("item")?.Value ?? element.Name.LocalName;
