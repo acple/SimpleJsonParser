@@ -110,8 +110,8 @@ namespace SimpleJsonParser
                 this.Value = value;
             }
 
-            private static string CreateEscapedString(string str) =>
-                "\"" + str.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\n", "\\n").Replace("\r", "\\r")
+            private static string CreateEscapedString(string value) =>
+                "\"" + value.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\n", "\\n").Replace("\r", "\\r")
                     .Replace("\t", "\\t").Replace("\f", "\\f").Replace("\b", "\\b").Replace("/", "\\/") + "\"";
 
             public override string ToString()
@@ -148,10 +148,10 @@ namespace SimpleJsonParser
                 return CreateJsonElement(XElement.Load(reader));
         }
 
-        public static JsonElement Parse(Stream stream) => Parse(stream, Encoding.UTF8);
-        public static JsonElement Parse(Stream stream, Encoding encoding)
+        public static JsonElement Parse(Stream json) => Parse(json, Encoding.UTF8);
+        public static JsonElement Parse(Stream json, Encoding encoding)
         {
-            using (var reader = JsonReaderWriterFactory.CreateJsonReader(stream, encoding, XmlDictionaryReaderQuotas.Max, null))
+            using (var reader = JsonReaderWriterFactory.CreateJsonReader(json, encoding, XmlDictionaryReaderQuotas.Max, null))
                 return CreateJsonElement(XElement.Load(reader));
         }
 
