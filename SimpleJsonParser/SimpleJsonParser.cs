@@ -4,10 +4,10 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Runtime.Serialization.Json;
 using System.Text;
-using System.Xml;
 using System.Xml.Linq;
+using static System.Runtime.Serialization.Json.JsonReaderWriterFactory;
+using static System.Xml.XmlDictionaryReaderQuotas;
 
 namespace SimpleJsonParser
 {
@@ -144,14 +144,14 @@ namespace SimpleJsonParser
         public static JsonElement Parse(string json) => Parse(json, Encoding.UTF8);
         public static JsonElement Parse(string json, Encoding encoding)
         {
-            using (var reader = JsonReaderWriterFactory.CreateJsonReader(encoding.GetBytes(json), XmlDictionaryReaderQuotas.Max))
+            using (var reader = CreateJsonReader(encoding.GetBytes(json), Max))
                 return CreateJsonElement(XElement.Load(reader));
         }
 
         public static JsonElement Parse(Stream json) => Parse(json, Encoding.UTF8);
         public static JsonElement Parse(Stream json, Encoding encoding)
         {
-            using (var reader = JsonReaderWriterFactory.CreateJsonReader(json, encoding, XmlDictionaryReaderQuotas.Max, null))
+            using (var reader = CreateJsonReader(json, encoding, Max, null))
                 return CreateJsonElement(XElement.Load(reader));
         }
 
