@@ -70,11 +70,9 @@ namespace SimpleJsonParser
 
         private static string GetElementName(XElement element) => element.Attribute("item")?.Value ?? element.Name.LocalName;
 
-        private static IDictionary<string, JsonElement> JsonObject(IEnumerable<XElement> elements)
-        {
-            var name = null as string;
-            return elements.ToDictionary(x => name = GetElementName(x), x => CreateJsonElement(x, name));
-        }
+        private static IDictionary<string, JsonElement> JsonObject(IEnumerable<XElement> elements) => elements
+            .Select(x => CreateJsonElement(x, GetElementName(x)))
+            .ToDictionary(x => x.Name);
 
         private static IList<JsonElement> JsonArray(IEnumerable<XElement> elements) => elements
             .Select((x, i) => CreateJsonElement(x, i.ToString()))
